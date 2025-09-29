@@ -2,6 +2,17 @@
 
 Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 
+## Project structure notes
+
+- Pages live in `app/pages/*` and are rendered inside the active layout in `app/layouts/*`.
+- The default layout must expose a `<slot />` for page content; otherwise routes like `pages/profile.vue` won't display.
+- The root `app/app.vue` should wrap `NuxtLayout` around `NuxtPage` (optionally inside containers/components).
+
+Troubleshooting missing page render:
+
+- Ensure `app/layouts/default.vue` contains `<slot />`.
+- Ensure `app/app.vue` includes `<NuxtLayout><NuxtPage /></NuxtLayout>`.
+
 ## Setup
 
 Make sure to install dependencies:

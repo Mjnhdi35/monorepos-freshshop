@@ -37,10 +37,11 @@ yarn start:dev
 
 ### JWT Token Architecture
 
-- **Access Token**: 24h lifetime
-- **Refresh Token**: 7d lifetime with Redis pub/sub optimization
-- **Session Caching**: Redis-based storage
-- **Real-time Updates**: Pub/sub events for token management
+- **Access Token (`access_token`)**: 24h lifetime, returned on login/register and rotated via refresh
+- **Refresh Token (`refresh_token`)**: 7d lifetime, stored in Redis, rotates and invalidates old sessions
+- **Session ID (`session_id`)**: Redis key to track user session and refresh linkage
+- **Session Caching**: Redis-based storage for sessions and user context
+- **Real-time Updates**: Pub/sub events for token/session management
 
 ### Role-Based Access Control
 
@@ -90,9 +91,21 @@ yarn test:cov           # Coverage
 ### Authentication
 
 - `POST /auth/register` - User registration
+  - Request body:
+    - `{ email, username, firstName, lastName, password, phone, address }`
+  - Response:
+    - `{ access_token, refresh_token, session_id, user }`
 - `POST /auth/login` - User login
+  - Request body:
+    - `{ emailOrUsername, password }`
+  - Response:
+    - `{ access_token, refresh_token, session_id, user }`
 - `POST /auth/refresh` - Token refresh (Redis optimized)
-- `GET /auth/profile` - User profile
+  - Request body:
+    - `{ refresh_token, session_id }`
+  - Response:
+    - `{ access_token, refresh_token, session_id }`
+- `GET /auth/profile` - User profile (Authorization: Bearer access_token)
 
 ### Products
 

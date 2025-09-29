@@ -88,7 +88,7 @@ export class UsersService {
         'updatedAt',
       ],
     });
-    console.log('users', users);
+
     // Cache for 5 minutes
     await this.redisService.set(cacheKey, JSON.stringify(users), 300);
 

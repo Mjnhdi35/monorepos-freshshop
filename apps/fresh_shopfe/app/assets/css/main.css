@@ -1,7 +1,8 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-@theme {
+@theme static {
+  --font-sans: "Public Sans", system-ui, sans-serif;
   /* Custom Brand Colors - Light Mode */
   /* ==============================
      🌿 Leaf Green (primary brand)
