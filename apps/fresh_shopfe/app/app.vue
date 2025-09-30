@@ -1,5 +1,13 @@
 <template>
-  <div>
-    <h1 class="bg-amber-300">hello world</h1>
-  </div>
+  <UApp>
+    <UHeader />
+
+    <UMain>
+      <NuxtLayout>
+        <NuxtPage />
+      </NuxtLayout>
+    </UMain>
+
+    <UFooter />
+  </UApp>
 </template>

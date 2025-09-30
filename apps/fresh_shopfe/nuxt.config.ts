@@ -4,4 +4,14 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["@nuxt/ui"],
   css: ["~/assets/css/main.css"],
+  runtimeConfig: {
+    public: {
+      apiBase: "http://localhost:7000/api/v1",
+    },
+  },
+  nitro: {
+    experimental: {
+      wasm: true,
+    },
+  },
 });
