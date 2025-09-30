@@ -66,7 +66,7 @@ export class User {
   @OneToMany(() => Product, (product) => product.seller)
   products: Product[];
 
-  @ManyToOne(() => Role, (role) => role.users)
+  @ManyToOne(() => Role, (role) => role.users, { eager: true })
   @JoinColumn({ name: 'roleId' })
   role: Role;
 

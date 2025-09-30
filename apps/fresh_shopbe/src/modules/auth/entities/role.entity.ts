@@ -41,7 +41,9 @@ export class Role {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToMany(() => Permission, (permission) => permission.roles)
+  @ManyToMany(() => Permission, (permission) => permission.roles, {
+    eager: true,
+  })
   permissions: Permission[];
 
   @OneToMany(() => User, (user) => user.role)

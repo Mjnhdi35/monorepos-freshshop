@@ -107,6 +107,9 @@ yarn test:cov           # Coverage
     - `{ access_token, refresh_token, session_id }`
 - `GET /auth/profile` - User profile (Authorization: Bearer access_token)
 
+- `GET /auth/google` → Google OAuth 2.0 login
+- `GET /auth/google/callback` → Google OAuth callback (returns `{ access_token, refresh_token, session_id, user }`)
+
 ### Products
 
 - `GET /products` - List products
@@ -137,6 +140,11 @@ REDIS_PORT=6379
 # JWT
 JWT_SECRET=your-super-secret-jwt-key
 JWT_EXPIRES_IN=24h
+
+# OAuth
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_CALLBACK_URL=http://localhost:7000/api/v1/auth/google/callback
 
 # Application
 PORT=7000

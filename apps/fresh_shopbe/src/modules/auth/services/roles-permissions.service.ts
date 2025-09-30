@@ -219,20 +219,22 @@ export class RolesPermissionsService implements OnModuleInit {
         relations: ['permissions'],
       });
 
+      const rolePermissions = permissions.filter((p) =>
+        roleInfo.permissions.includes(p.name),
+      );
+
       if (!role) {
         role = this.rolesRepository.create({
           name: roleInfo.name,
           description: roleInfo.description,
           isSystem: roleInfo.isSystem,
+          permissions: rolePermissions,
         });
-
-        // Assign permissions
-        const rolePermissions = permissions.filter((p) =>
-          roleInfo.permissions.includes(p.name),
-        );
-        role.permissions = rolePermissions;
-
         role = await this.rolesRepository.save(role);
+      } else {
+        // Ensure permissions are up-to-date if seed changes
+        role.permissions = rolePermissions;
+        await this.rolesRepository.save(role);
       }
     }
   }

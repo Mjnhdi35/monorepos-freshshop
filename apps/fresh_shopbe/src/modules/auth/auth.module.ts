@@ -9,6 +9,7 @@ import { RolesController } from './controllers/roles.controller';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
 import { RolesPermissionsService } from './services/roles-permissions.service';
@@ -37,6 +38,7 @@ import { RefreshTokenGuard } from './guards/refresh-token.guard';
     AuthService,
     JwtStrategy,
     LocalStrategy,
+    GoogleStrategy,
     RolesPermissionsService,
     SessionService,
     RefreshTokenService,

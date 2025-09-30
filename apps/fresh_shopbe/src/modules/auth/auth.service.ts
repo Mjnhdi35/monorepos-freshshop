@@ -19,6 +19,75 @@ export class AuthService {
     private refreshTokenService: RefreshTokenService,
     private rolesPermissionsService: RolesPermissionsService,
   ) {}
+  async oauthLogin(payload: {
+    provider: 'google';
+    providerId: string;
+    email?: string;
+    username: string;
+    firstName?: string;
+    lastName?: string;
+  }) {
+    // Try find by email or username; if not exists, create with default role
+    let user = null as User | null;
+    if (payload.email) {
+      user = await this.usersService.findByEmail(payload.email);
+    }
+    if (!user) {
+      user = await this.usersService.findByUsername(payload.username);
+    }
+
+    if (!user) {
+      const defaultRole =
+        await this.rolesPermissionsService.getRoleByName('user');
+      user = await this.usersService.create({
+        email: payload.email || `${payload.providerId}@google.local`,
+        username: payload.username,
+        firstName: payload.firstName || 'Google',
+        lastName: payload.lastName || 'User',
+        password: crypto.randomBytes(16).toString('hex'),
+        roleId: defaultRole?.id,
+      } as any);
+    }
+
+    // Issue tokens and session, like login()
+    const userWithRole = await this.usersService.findOne(user.id);
+    const token = this.jwtService.sign({
+      email: user.email,
+      sub: user.id,
+      role: userWithRole.role?.name || 'user',
+      jti: `${user.id}-${Date.now()}`,
+    });
+    const sessionId = this.generateSessionId();
+    await this.sessionService.createSession(
+      userWithRole,
+      token,
+      86400,
+      sessionId,
+    );
+    const refreshToken =
+      await this.refreshTokenService.generateRefreshTokenWithSession(
+        user.id,
+        sessionId,
+      );
+
+    return {
+      access_token: token,
+      refresh_token: refreshToken,
+      session_id: sessionId,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: userWithRole.role?.name || 'user',
+        permissions:
+          userWithRole.role?.permissions?.map(
+            (p) => `${p.resource}:${p.action}`,
+          ) || [],
+      },
+    };
+  }
 
   private generateSessionId(): string {
     return `session_${crypto.randomUUID()}`;

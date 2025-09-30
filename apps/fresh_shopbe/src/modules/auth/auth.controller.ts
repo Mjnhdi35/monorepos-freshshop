@@ -1,4 +1,12 @@
-import { Controller, Post, Body, UseGuards, Get, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Get,
+  Req,
+  UseInterceptors,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -16,6 +24,8 @@ import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { GetUser } from './decorators/get-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { User } from '../users/entities/user.entity';
+import { SetAuthHeadersInterceptor } from './interceptors/set-auth-headers.interceptor';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -24,6 +34,7 @@ export class AuthController {
 
   @Public()
   @Post('register')
+  @UseInterceptors(SetAuthHeadersInterceptor)
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 409, description: 'User already exists' })
@@ -34,6 +45,7 @@ export class AuthController {
   @Public()
   @UseGuards(LocalAuthGuard)
   @Post('login')
+  @UseInterceptors(SetAuthHeadersInterceptor)
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
@@ -84,6 +96,7 @@ export class AuthController {
 
   @UseGuards(RefreshTokenGuard)
   @Post('refresh')
+  @UseInterceptors(SetAuthHeadersInterceptor)
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -100,5 +113,20 @@ export class AuthController {
     @Body() refreshTokenSessionDto: RefreshTokenSessionDto,
   ) {
     return this.authService.refreshToken(refreshTokenSessionDto.refresh_token);
+  }
+
+  @Public()
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Google OAuth login' })
+  async googleAuth() {}
+
+  @Public()
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  @UseInterceptors(SetAuthHeadersInterceptor)
+  @ApiOperation({ summary: 'Google OAuth callback' })
+  async googleCallback(@Req() req: any) {
+    return req.user;
   }
 }
