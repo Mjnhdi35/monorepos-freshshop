@@ -8,9 +8,9 @@ export class RefreshTokenService {
   private readonly logger = new Logger(RefreshTokenService.name);
 
   constructor(
-    private redisService: RedisService,
-    private jwtService: JwtService,
-    private usersService: UsersService,
+    private readonly redisService: RedisService,
+    private readonly jwtService: JwtService,
+    private readonly usersService: UsersService,
   ) {}
 
   private getRefreshTokenKey(userId: string): string {

@@ -12,10 +12,11 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors({
-    origin: configService.get<string>('CORS_ORIGIN'),
+    origin: configService.get<string>('CORS_ORIGIN') || 'http://localhost:3000',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
+    optionsSuccessStatus: 200,
   });
 
   // Global validation pipe
@@ -33,21 +34,33 @@ async function bootstrap() {
     .setDescription(
       configService.get<string>(
         'SWAGGER_DESCRIPTION',
-        'API documentation for Fresh Shop application',
+        'API documentation for Fresh Shop application. Use Bearer token authentication for protected endpoints.',
       ),
     )
     .setVersion(configService.get<string>('SWAGGER_VERSION', '1.0'))
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('swagger', app, document);
+  SwaggerModule.setup('/api/v1/swagger', app, document);
 
   const port = +configService.getOrThrow<number>('PORT')!;
   app.useGlobalInterceptors(new TransformResponseInterceptor());
   await app.listen(port);
 
   console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📚 Swagger documentation: http://localhost:${port}/api`);
+  console.log(
+    `📚 Swagger documentation: http://localhost:${port}/api/v1/swagger`,
+  );
 }
 bootstrap();

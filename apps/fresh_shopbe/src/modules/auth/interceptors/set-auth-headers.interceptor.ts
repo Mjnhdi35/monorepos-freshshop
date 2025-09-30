@@ -15,20 +15,10 @@ export class SetAuthHeadersInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       map((data) => {
-        if (
-          data &&
-          (data.access_token || data.refresh_token || data.session_id)
-        ) {
-          if (data.access_token) {
-            res.setHeader('Authorization', `Bearer ${data.access_token}`);
-            res.setHeader('X-Access-Token', data.access_token);
-          }
-          if (data.refresh_token) {
-            res.setHeader('X-Refresh-Token', data.refresh_token);
-          }
-          if (data.session_id) {
-            res.setHeader('X-Session-Id', data.session_id);
-          }
+        // Only set Authorization header for access token
+        // Refresh token is handled via HttpOnly cookie
+        if (data && data.access_token) {
+          res.setHeader('Authorization', `Bearer ${data.access_token}`);
         }
         return data;
       }),

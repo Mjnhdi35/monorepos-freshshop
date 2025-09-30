@@ -4,7 +4,7 @@ import { User } from '../../users/entities/user.entity';
 
 @Injectable()
 export class SessionService {
-  constructor(private redisService: RedisService) {}
+  constructor(private readonly redisService: RedisService) {}
 
   private getSessionKey(userId: string): string {
     return `session:${userId}`;

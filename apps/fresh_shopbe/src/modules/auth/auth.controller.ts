@@ -6,6 +6,8 @@ import {
   Get,
   Req,
   UseInterceptors,
+  Res,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,11 +18,8 @@ import {
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { RefreshTokenSessionDto } from './dto/refresh-token-session.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { GetUser } from './decorators/get-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { User } from '../users/entities/user.entity';
@@ -38,8 +37,24 @@ export class AuthController {
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 409, description: 'User already exists' })
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  async register(
+    @Body() registerDto: RegisterDto,
+    @Res({ passthrough: true }) res: any,
+  ) {
+    const result = await this.authService.register(registerDto);
+
+    // Set refresh token in HttpOnly cookie
+    res.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/api/v1/auth/refresh',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Remove refresh_token from response body
+    const { refresh_token, ...responseData } = result;
+    return responseData;
   }
 
   @Public()
@@ -49,13 +64,29 @@ export class AuthController {
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) res: any,
+  ) {
+    const result = await this.authService.login(loginDto);
+
+    // Set refresh token in HttpOnly cookie
+    res.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/api/v1/auth/refresh',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Remove refresh_token from response body
+    const { refresh_token, ...responseData } = result;
+    return responseData;
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({
     status: 200,
@@ -82,37 +113,51 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async logout(@Req() req: any) {
+  async logout(@Req() req: any, @Res({ passthrough: true }) res: any) {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (token) {
       await this.authService.logout(token);
     }
+
+    // Clear refresh token cookie
+    res.clearCookie('refresh_token', {
+      path: '/api/v1/auth/refresh',
+    });
+
     return { message: 'Logout successful' };
   }
 
-  @UseGuards(RefreshTokenGuard)
+  @Public()
   @Post('refresh')
   @UseInterceptors(SetAuthHeadersInterceptor)
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
-    return this.authService.refreshToken(refreshTokenDto.refresh_token);
-  }
+  async refreshToken(@Req() req: any, @Res({ passthrough: true }) res: any) {
+    const refreshToken = req.cookies?.refresh_token;
 
-  @UseGuards(RefreshTokenGuard)
-  @Post('refresh-session')
-  @ApiOperation({ summary: 'Refresh access token with session' })
-  @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async refreshTokenWithSession(
-    @Body() refreshTokenSessionDto: RefreshTokenSessionDto,
-  ) {
-    return this.authService.refreshToken(refreshTokenSessionDto.refresh_token);
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token not found');
+    }
+
+    const result = await this.authService.refreshToken(refreshToken);
+
+    // Set new refresh token in HttpOnly cookie
+    res.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/api/v1/auth/refresh',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Remove refresh_token from response body
+    const { refresh_token, ...responseData } = result;
+    return responseData;
   }
 
   @Public()
@@ -126,7 +171,20 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   @UseInterceptors(SetAuthHeadersInterceptor)
   @ApiOperation({ summary: 'Google OAuth callback' })
-  async googleCallback(@Req() req: any) {
-    return req.user;
+  async googleCallback(@Req() req: any, @Res({ passthrough: true }) res: any) {
+    const result = req.user;
+
+    // Set refresh token in HttpOnly cookie
+    res.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/api/v1/auth/refresh',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Remove refresh_token from response body
+    const { refresh_token, ...responseData } = result;
+    return responseData;
   }
 }

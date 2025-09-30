@@ -8,9 +8,9 @@ import { Permission } from '../entities/permission.entity';
 export class RolesPermissionsService implements OnModuleInit {
   constructor(
     @InjectRepository(Role)
-    private rolesRepository: Repository<Role>,
+    private readonly rolesRepository: Repository<Role>,
     @InjectRepository(Permission)
-    private permissionsRepository: Repository<Permission>,
+    private readonly permissionsRepository: Repository<Permission>,
   ) {}
 
   async onModuleInit() {

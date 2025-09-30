@@ -15,7 +15,6 @@ import { Permission } from './entities/permission.entity';
 import { RolesPermissionsService } from './services/roles-permissions.service';
 import { SessionService } from './services/session.service';
 import { RefreshTokenService } from './services/refresh-token.service';
-import { RefreshTokenGuard } from './guards/refresh-token.guard';
 
 @Module({
   imports: [
@@ -27,7 +26,7 @@ import { RefreshTokenGuard } from './guards/refresh-token.guard';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h'),
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '15m'),
         },
       }),
       inject: [ConfigService],
@@ -42,7 +41,6 @@ import { RefreshTokenGuard } from './guards/refresh-token.guard';
     RolesPermissionsService,
     SessionService,
     RefreshTokenService,
-    RefreshTokenGuard,
   ],
   exports: [
     AuthService,
